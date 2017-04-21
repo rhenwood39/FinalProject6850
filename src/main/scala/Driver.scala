@@ -46,10 +46,10 @@ object Driver {
     * @param tweetRDD set of all tweets
     * @return rdd containing id's of users who have used these tweets
     */
-  def getImportantUsers(importantHashes: RDD[Int], tweetRDD: RDD[Tweet]): RDD[Int] = {
+  def getImportantUsers(importantHashes: Set[Int], tweetRDD: RDD[Tweet]): RDD[Int] = {
     tweetRDD.map(tweet => (tweet.authorID, tweet.hashtagIDS))
+      .filter(t => t._2.exists(importantHashes.contains))
       .map(t => t._1)
-      .intersection(importantHashes)
   }
 
   def buildRetweetNetwork(importantUsers: RDD[Int], tweetRDD: RDD[Tweet]): RDD[(Int, Iterable[Int])] = {
