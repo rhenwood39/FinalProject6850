@@ -4,7 +4,7 @@
 		module="finalproj6850$sbt_2.10"
 		revision="1.0"
 		status="integration"
-		publication="20170421153331"
+		publication="20170422085119"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>

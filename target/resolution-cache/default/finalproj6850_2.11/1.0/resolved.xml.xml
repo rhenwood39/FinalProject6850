@@ -4,7 +4,7 @@
 		module="finalproj6850_2.11"
 		revision="1.0"
 		status="integration"
-		publication="20170421153244"
+		publication="20170422084911"
 	>
 		<description>
 		FinalProj6850
@@ -34,6 +34,8 @@
 	<dependencies>
 		<dependency org="org.scala-lang" name="scala-compiler" rev="2.11.7" conf="scala-tool->default,optional(default)"/>
 		<dependency org="org.scala-lang" name="scala-library" rev="2.11.7" conf="scala-tool->default,optional(default);compile->default(compile)"/>
-		<dependency org="org.apache.spark" name="spark-core_2.11" rev="2.1.0" conf="compile->default(compile)"/>
+		<dependency org="org.apache.spark" name="spark-core_2.11" rev="1.5.2" conf="compile->default(compile)"/>
+		<dependency org="org.apache.spark" name="spark-graphx_2.11" rev="1.5.2" conf="compile->default(compile)"/>
+		<dependency org="org.scalatest" name="scalatest_2.11" rev="3.0.1" conf="test->default(compile)"/>
 	</dependencies>
 </ivy-module>

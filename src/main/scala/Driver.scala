@@ -1,21 +1,11 @@
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.graphx._
 
 /**
   * Driver file
   */
 object Driver {
-  /**
-    * Populate retweetIDs of tweets in a network
-    * @param tweetRDD Set of tweets whose retweetIDs field has not been populated
-    * @return
-    */
-  def populateRetweetIDS(tweetRDD: RDD[Tweet]) : Any = {
-    tweetRDD.map(tweet => (tweet.retweetOf, tweet))
-      .filter(t => t._1.nonEmpty)
-      .map(t => (t._1.get, Set(t._2)))
-      .reduceByKey((t1, t2) => t1.union(t2))
-  }
-
   /**
     * Finds what hashtags cooccured often with provided seed id
     * @param hashSeedID hashtag we want to use as seed
@@ -58,44 +48,53 @@ object Driver {
     * @param tweetRDD set of all tweets
     * @return rdd containing id's of users who have used these tweets
     */
-  def getImportantUsers(importantHashes: Set[Int], tweetRDD: RDD[Tweet]): RDD[Int] = {
+  def getImportantUsers(importantHashes: RDD[Int], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[Int] = {
+    val importantHashesBC = sc.broadcast(importantHashes.collect().toSet)
     tweetRDD.map(tweet => (tweet.authorID, tweet.hashtagIDS))
-      .filter(t => t._2.exists(importantHashes.contains))
+      .filter(t => t._2.exists(importantHashesBC.value.contains))
       .map(t => t._1)
   }
 
   /**
-    * Build retweent network
-    * @param importantUsers users we want in netword
+    * Filter un-important people out of the graph
+    * @param importantUsers users we want in network
     * @param tweetRDD set of tweets
     * @return
     */
-  def buildRetweetNetwork(importantUsers: RDD[Int], tweetRDD: RDD[Tweet]): RDD[(Int, Iterable[Int])] = {
-    // to be used later
-    val _importantUsers: RDD[(Int, (Int, Set[Int]))] = importantUsers.map(user => (user, (0, Set[Int]())))
-    val _importantUsers2: RDD[(Int, Iterable[Int])] = importantUsers.map(user => (user, Seq[Int]()))
+  def filterByUsers(importantUsers: RDD[Int], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[Tweet] = {
+    val importantUsersBC = sc.broadcast(importantUsers.collect().toSet)
 
-    // filter out tweets by un-important users
-    val rdd: RDD[(Int, Int, Set[Int])] =
-      tweetRDD.map(tweet => (tweet.authorID, (tweet.tweetID, tweet.retweetIDS)))
-      .join(_importantUsers)
-      .map(t => (t._2._1._1, t._1, t._2._1._2)) // (tweetID, authorID, retweetIDS)
+    // only keep original tweets written by important people
+    // only keep retweets (1) retweeted by important people and (2) originally by important people
+    tweetRDD.filter(tweet => importantUsersBC.value.contains(tweet.authorID)
+          && (tweet.retweetOf.isEmpty || importantUsersBC.value.contains(tweet.retweetOf.get.authorID)))
+  }
 
-    // get rdd that maps important user -> set of retweets they used
-    val userRetweets: RDD[(Int, Set[Int])] =
-      rdd.map(t => (t._2, t._3))
-        .reduceByKey((h1, h2) => h2.union(h1))
+  /**
+    * build retweet network
+    * @param tweetRDD tweets we are using to build network
+    * @return
+    */
+  def buildRetweetNetwork(tweetRDD: RDD[Tweet]): Graph[String, String] = {
+    val nodes: RDD[(VertexId, String)] =
+      tweetRDD.map(tweet => (tweet.authorID.toLong, null.asInstanceOf[String])).distinct()
+    val edges: RDD[Edge[String]] =
+      tweetRDD.filter(tweet => tweet.retweetOf.nonEmpty)
+        .map(tweet => Edge(tweet.authorID.toLong, tweet.retweetOf.get.authorID.toLong))
 
-    // get rdd that maps tweetID -> authorID
-    val tweet2author: RDD[(Int, Int)] = rdd.map(t => (t._1, t._2))
+    // get version of graph with edges backwards
+    val revGraph: Graph[String, String] = Graph(nodes, edges)
 
-    // now, get rdd that maps important user -> set of authors they retweeted
-    userRetweets.map(t => t._2.map(tweetID => (tweetID, t._1)))
-      .flatMap(t => t.toSeq)
-      .join(tweet2author)
-      .map(t => (t._2._1, t._2._2))
-      .groupByKey()
-      .rightOuterJoin(_importantUsers2)
-      .map(t => (t._1, t._2._1.getOrElse(t._2._2)))
+    // reverse edges and remove duplicates
+    revGraph.reverse.groupEdges((a, b) => null.asInstanceOf[String])
   }
 }
+
+
+
+
+
+
+
+
+
