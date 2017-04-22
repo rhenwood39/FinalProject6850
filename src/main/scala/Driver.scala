@@ -113,7 +113,7 @@ object Driver {
     * @param graph
     * @param filepath
     */
-  def writeVerticesToFile(graph: Graph[String, String], filepath: String): Unit = {
+  def writeVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
     graph.vertices.map(v => v._1).saveAsTextFile(filepath)
   }
 
@@ -122,7 +122,7 @@ object Driver {
     * @param graph
     * @param filepath
     */
-  def writeEdgesToFile(graph: Graph[String, String], filepath: String): Unit = {
+  def writeEdgesToFile(graph: Graph[_,_], filepath: String): Unit = {
     class customTuple[K, V](k: K, v: V) {
       override def toString: String = k.toString + ", " + v.toString
     }
