@@ -6,6 +6,8 @@ import org.apache.spark.graphx._
   * Driver file
   */
 object Driver {
+  // TODO: Need method for reading in json and turning it into rdd of tweets
+
   /**
     * Finds what hashtags cooccured often with provided seed id
     * @param hashSeedID hashtag we want to use as seed
