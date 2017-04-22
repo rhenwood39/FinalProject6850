@@ -56,38 +56,57 @@ object Driver {
   }
 
   /**
-    * Filter un-important people out of the graph
+    * Filter out tweets that won't help determine edges (according to retweets)
     * @param importantUsers users we want in network
     * @param tweetRDD set of tweets
-    * @return
+    * @param sc
+    * @return original author id -> retweet author id
     */
-  def filterByUsers(importantUsers: RDD[Int], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[Tweet] = {
+  def filterByUsersRT(importantUsers: RDD[Int], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Int, Int)] = {
     val importantUsersBC = sc.broadcast(importantUsers.collect().toSet)
 
-    // only keep original tweets written by important people
-    // only keep retweets (1) retweeted by important people and (2) originally by important people
+    // only keep tweets that were
+    //   (1) retweets tweeted by important people
+    //   (2) where original tweet was by an important person
     tweetRDD.filter(tweet => importantUsersBC.value.contains(tweet.authorID)
-          && (tweet.retweetOf.isEmpty || importantUsersBC.value.contains(tweet.retweetOf.get.authorID)))
+          && tweet.retweetOf.nonEmpty && importantUsersBC.value.contains(tweet.retweetOf.get.authorID))
+      .map(tweet => (tweet.retweetOf.get.authorID, tweet.authorID))
+  }
+
+  /**
+    * Filter out tweets that won't help detwemine edges (according to mentions)
+    * @param importantUsers users we want in network
+    * @param tweetRDD set of tweets
+    * @param sc
+    * @return author id -> mentioned user id
+    */
+  def filterByUsersMention(importantUsers: RDD[Int], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Int, Int)] = {
+    val importantUsersBC = sc.broadcast(importantUsers.collect().toSet)
+
+    // only keep tweets that we
+    //    (1) written by important user
+    //    (2) mention an important user
+    tweetRDD.map(tweet => tweet.mentionIDS.map(mentionID => (tweet.authorID, mentionID)))
+      .flatMap(t => t.toSeq)
+      .filter(t => importantUsersBC.value.contains(t._1) && importantUsersBC.value.contains(t._2))
   }
 
   /**
     * build retweet network
-    * @param tweetRDD tweets we are using to build network
-    * @return
+    * @param importantUsers users we want in network
+    * @param connections edges we want to draw (should consist of users in important users)
+    * @return graph of network
     */
-  def buildRetweetNetwork(tweetRDD: RDD[Tweet]): Graph[String, String] = {
+  def buildNetwork(importantUsers: RDD[Int], connections: RDD[(Int, Int)]): Graph[String, String] = {
+
     val nodes: RDD[(VertexId, String)] =
-      tweetRDD.map(tweet => (tweet.authorID.toLong, null.asInstanceOf[String])).distinct()
-    val edges: RDD[Edge[String]] =
-      tweetRDD.filter(tweet => tweet.retweetOf.nonEmpty)
-        .map(tweet => Edge(tweet.authorID.toLong, tweet.retweetOf.get.authorID.toLong))
+      importantUsers.map(id => (id.toLong, null.asInstanceOf[String])).distinct()
+    val edges: RDD[Edge[String]] = connections.map(t => Edge(t._1.toLong, t._2.toLong))
 
-    // get version of graph with edges backwards
-    val revGraph: Graph[String, String] = Graph(nodes, edges)
-
-    // reverse edges and remove duplicates
-    revGraph.reverse.groupEdges((_,_) => null.asInstanceOf[String])
+    Graph(nodes, edges).groupEdges((_,_) => null.asInstanceOf[String])
   }
+
+
 }
 
 
