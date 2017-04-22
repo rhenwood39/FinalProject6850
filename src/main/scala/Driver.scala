@@ -109,6 +109,24 @@ object Driver {
   }
 
   /**
+    * Find largest connected component of graph
+    * @param graph
+    * @return largest connected component (note meta-data associated with verices is erosed)
+    */
+  def largestConnectedComp(graph: Graph[_,_]) : Graph[_, _] = {
+    val connComp = graph.connectedComponents()
+    val seedID: VertexId = connComp.vertices
+      .map(v => (v._2, 1))
+      .reduceByKey((c1, c2) => c1 + c2)
+      .max()(new Ordering[Tuple2[VertexId, Int]]() {
+        override def compare(x: (VertexId, Int), y: (VertexId, Int)): Int =
+        Ordering[Int].compare(x._2, y._2)
+      })._1
+
+    connComp.subgraph(e => true, (v,d) => d == seedID)
+  }
+
+  /**
     * Write vertices to file
     * @param graph
     * @param filepath

@@ -91,6 +91,20 @@ class Driver$Test extends FunSuite with BeforeAndAfterEach {
     assert(edges.equals(Set((1,2), (1,5), (4,5), (1,3))))
   }
 
+  test("testLargestConnectedComponent") {
+    val vertices = sc.parallelize(Seq(1,2,3,4,5,6,7,8))
+    val edges = sc.parallelize(Seq((1,2), (2,3), (3,4), (5,6), (6,7)))
+
+    val graph = Driver.buildNetwork(vertices, edges);
+    val largestConnComp = Driver.largestConnectedComp(graph);
+
+    val compVertices = largestConnComp.vertices.map(v => v._1).collect().toSet
+    assert(compVertices.equals(Set(1,2,3,4)))
+
+    val compEdges = largestConnComp.edges.map(e => (e.srcId.toLong, e.dstId.toLong)).collect().toSet
+    assert(compEdges.equals(Set((1,2), (2,3), (3,4))))
+  }
+
 }
 
 
