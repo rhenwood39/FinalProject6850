@@ -5,6 +5,18 @@ import org.apache.spark.rdd.RDD
   */
 object Driver {
   /**
+    * Populate retweetIDs of tweets in a network
+    * @param tweetRDD Set of tweets whose retweetIDs field has not been populated
+    * @return
+    */
+  def populateRetweetIDS(tweetRDD: RDD[Tweet]) : Any = {
+    tweetRDD.map(tweet => (tweet.retweetOf, tweet))
+      .filter(t => t._1.nonEmpty)
+      .map(t => (t._1.get, Set(t._2)))
+      .reduceByKey((t1, t2) => t1.union(t2))
+  }
+
+  /**
     * Finds what hashtags cooccured often with provided seed id
     * @param hashSeedID hashtag we want to use as seed
     * @param threshold jaccard sim threshold
@@ -52,23 +64,30 @@ object Driver {
       .map(t => t._1)
   }
 
+  /**
+    * Build retweent network
+    * @param importantUsers users we want in netword
+    * @param tweetRDD set of tweets
+    * @return
+    */
   def buildRetweetNetwork(importantUsers: RDD[Int], tweetRDD: RDD[Tweet]): RDD[(Int, Iterable[Int])] = {
     // to be used later
     val _importantUsers: RDD[(Int, (Int, Set[Int]))] = importantUsers.map(user => (user, (0, Set[Int]())))
+    val _importantUsers2: RDD[(Int, Iterable[Int])] = importantUsers.map(user => (user, Seq[Int]()))
 
     // filter out tweets by un-important users
-    val rdd =
+    val rdd: RDD[(Int, Int, Set[Int])] =
       tweetRDD.map(tweet => (tweet.authorID, (tweet.tweetID, tweet.retweetIDS)))
       .join(_importantUsers)
       .map(t => (t._2._1._1, t._1, t._2._1._2)) // (tweetID, authorID, retweetIDS)
 
     // get rdd that maps important user -> set of retweets they used
-    val userRetweets =
+    val userRetweets: RDD[(Int, Set[Int])] =
       rdd.map(t => (t._2, t._3))
         .reduceByKey((h1, h2) => h2.union(h1))
 
     // get rdd that maps tweetID -> authorID
-    val tweet2author = rdd.map(t => (t._1, t._2))
+    val tweet2author: RDD[(Int, Int)] = rdd.map(t => (t._1, t._2))
 
     // now, get rdd that maps important user -> set of authors they retweeted
     userRetweets.map(t => t._2.map(tweetID => (tweetID, t._1)))
@@ -76,16 +95,7 @@ object Driver {
       .join(tweet2author)
       .map(t => (t._2._1, t._2._2))
       .groupByKey()
+      .rightOuterJoin(_importantUsers2)
+      .map(t => (t._1, t._2._1.getOrElse(t._2._2)))
   }
 }
-
-
-
-
-
-
-
-
-
-
-
