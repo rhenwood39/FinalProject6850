@@ -4,9 +4,9 @@ import org.scalatest.{BeforeAndAfterEach, FunSuite}
 
 class Driver$Test extends FunSuite with BeforeAndAfterEach {
 
-  var conf: SparkConf = null
-  var sc: SparkContext = null
-  var tweetRDD: RDD[Tweet] = null
+  var conf: SparkConf = _
+  var sc: SparkContext = _
+  var tweetRDD: RDD[Tweet] = _
 
   override def beforeEach() {
     val t1 = Tweet(1, 1, Set(1, 3, 4), None, Set())

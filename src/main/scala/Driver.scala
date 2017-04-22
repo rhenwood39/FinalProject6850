@@ -1,4 +1,4 @@
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.graphx._
 
@@ -86,7 +86,7 @@ object Driver {
     val revGraph: Graph[String, String] = Graph(nodes, edges)
 
     // reverse edges and remove duplicates
-    revGraph.reverse.groupEdges((a, b) => null.asInstanceOf[String])
+    revGraph.reverse.groupEdges((_,_) => null.asInstanceOf[String])
   }
 }
 
