@@ -2,6 +2,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.graphx._
 
+import scala.util.Random
+
 /**
   * Driver file
   */
@@ -127,12 +129,105 @@ object Driver {
   }
 
   /**
+    * Perform label propagation
+    * @param graph graph to do propagation on
+    * @param numIters number of iterations to do
+    * @return graph where each vertex is given its cluster's label
+    */
+  def labelProp(graph: Graph[_, _], numIters: Int): Graph[Long, _] = {
+    val rand: Random = Random
+
+    val vertices: RDD[(VertexId, Long)] = graph.vertices.map(v => (v._1, v._1))
+    var _graph: Graph[Long, _] = Graph(vertices, graph.edges)
+
+//    var prevg: Graph[Long, _] = null
+    var i = 0
+//    var active = 0L
+    do {
+//      prevg = _graph
+      _graph = labelPropHelper(_graph).cache()
+//      active = _graph.vertices.count()
+
+//      prevg.unpersistVertices(blocking = false)
+//      prevg.unpersistVertices(blocking = false)
+      i += 1
+//      if (i % 10 == 0) {
+//        _graph.checkpoint()
+//        //println("~~~~~~~~~~~~~~~~~~~~~~" + _graph.vertices.count())
+//      }
+    } while (i <= numIters)// && !isSettled(_graph))
+    _graph
+  }
+
+  /**
+    * return mode of list (break ties randomly)
+    * @return
+    */
+  def mode: Iterable[Long] => Long =
+    itrbl => Random.shuffle(itrbl.groupBy(i => i).mapValues(_.size)).maxBy(_._2)._1
+
+  /**
+    * checks if a value is the mode of a list
+    * @return
+    */
+  def isMode: (Long, Iterable[Long]) => Boolean = {
+    case (value, itrbl) => itrbl.groupBy(i => i).mapValues(_.size).maxBy(_._2)._2 == itrbl.count(_ == value)
+  }
+
+  /**
+    * checks whether each node's label is equal to the most frequent of its neighbors' labels
+    * @param graph
+    * @return
+    */
+  def isSettled(graph: Graph[Long, _]) : Boolean = {
+    val vertices: RDD[(VertexId, Long)] = graph.vertices.map(v => (v._1, v._2))
+    val edges: RDD[(VertexId, VertexId)] = graph.edges.map(e => (e.srcId, e.dstId))
+
+    vertices.join(edges) // (src, (lbl, dst))
+      .map(t => (t._2._2, t._2._1)) // (dst, incoming lbl)
+      .groupByKey() // (dst, List<incoming labels>)
+      .join(vertices) // (dst, (inc labels, curr label))
+      .map(t => isMode(t._2._2, t._2._1))
+      .reduce((a, b) => a && b)
+  }
+
+  /**
+    * relabels nodes at time t+1 to have most frequent label of neighbors at time t
+    * @param graph
+    * @return
+    */
+  def labelPropHelper(graph: Graph[Long, _]) : Graph[Long, _] = {
+    val rand: Random = Random
+
+    val vertices: RDD[(VertexId, Long)] = graph.vertices.map(v => (v._1, v._2))
+    val edges: RDD[(VertexId, VertexId)] = graph.edges.map(e => (e.srcId, e.dstId))
+
+    val newVertices = vertices.join(edges) // (src, (lbl, dst))
+      .map(t => (t._2._2, t._2._1)) // (dst, incoming lbl)
+      .groupByKey() // (dst List<incoming labels>)
+      .map(t => (t._1, mode(t._2))) // (dst, new lbl)
+      .rightOuterJoin(vertices) // (src, (Option<new label>, old label))
+      .map(t => (t._1, t._2._1.getOrElse(t._2._2)))
+
+    Graph(newVertices, graph.edges)
+  }
+
+  /**
     * Write vertices to file
     * @param graph
     * @param filepath
     */
   def writeVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
     graph.vertices.map(v => v._1).saveAsTextFile(filepath)
+  }
+
+  /**
+    * Write vertices to file in format "vertexID, label"
+    * @param graph
+    * @param filepath
+    */
+  def writeLabeledVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
+    graph.vertices.map(v => v._1 + ", " + v._2).saveAsTextFile(filepath)
   }
 
   /**

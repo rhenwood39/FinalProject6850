@@ -9,7 +9,7 @@ class Driver$Test extends FunSuite with BeforeAndAfterEach {
   var tweetRDD: RDD[Tweet] = _
 
   override def beforeEach() {
-    val t1 = Tweet(1, 1, Set("1", "3", "4"), None, Set(2))
+    val t1 = Tweet(1L, 1L, Set("1", "3", "4"), None, Set(2))
     val t2 = Tweet(2L, 1L, Set("3", "4", "8"), None, Set(3, 5))
     val t3 = Tweet(3L, 2L, Set("2", "3", "4", "8"), Option(t1), Set())
     val t4 = Tweet(4L, 3L, Set("10"), Option(t1), Set(1, 2))
@@ -19,6 +19,7 @@ class Driver$Test extends FunSuite with BeforeAndAfterEach {
 
     conf = new SparkConf().setAppName("test").setMaster("local")
     sc = new SparkContext(conf)
+    sc.setCheckpointDir("local")
 
     tweetRDD = sc.parallelize(Seq(t1, t2, t3, t4, t5, t6, t7))
   }
@@ -105,6 +106,33 @@ class Driver$Test extends FunSuite with BeforeAndAfterEach {
     assert(compEdges.equals(Set((1,2), (2,3), (3,4))))
   }
 
+  test("testLabelProb") {
+    val vertices: RDD[Long] = sc.parallelize(
+      Seq(1,2,3,4,5,6,7,8,9,10,
+        11,12,13,14,15,16,17,18,19,20,
+        21,22,23,24,25,26,27,28,29,30,31))
+
+    var _edges: Seq[(Long,Long)] = Seq()
+    for (i <- 1L to 15L)
+      for (j <- i+1 to 15L)
+        _edges = _edges ++ Seq((i,j),(j,i))
+    for (i <- 16L to 30L)
+      for (j <- i+1 to 30L)
+        _edges = _edges ++ Seq((i,j),(j,i))
+    _edges = _edges ++ Seq((15L,16L),(16L,15L))
+    val edges: RDD[(Long, Long)] = sc.parallelize(_edges)
+
+    val graph = Driver.buildNetwork(vertices, edges)
+    val labeledGraph = Driver.labelProp(graph, 50)
+    val labeledVertices = labeledGraph.vertices.collect().toMap
+    for (i <- 1 to 15)
+      println(labeledVertices(i))
+    println("===================================")
+    for (i <- 16 to 30)
+      println(labeledVertices(i))
+    println("==================================")
+    println(labeledVertices(31))
+  }
 }
 
 
