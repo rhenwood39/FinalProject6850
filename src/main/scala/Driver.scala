@@ -2,13 +2,49 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.graphx._
 
+import scala.io.Source
 import scala.util.Random
 
 /**
   * Driver file
   */
 object Driver {
-  // TODO: Need method for reading in json and turning it Longo rdd of tweets
+  /**
+    * Read tweets from provided file and store in RDD
+    * @param filepath
+    * @param sc
+    * @return rdd of tweets
+    */
+  def genRDDOfTweets(filepath: String, sc: SparkContext): RDD[Tweet] = {
+    var seq: Seq[Tweet] = Seq()
+    var rdd: RDD[Tweet] = sc.parallelize(Seq())
+    var i = 0
+
+    for (line <- Source.fromFile(filepath).getLines()) {
+      seq = seq ++ Seq(Tweet(line))
+      if (i == 1000) {
+        rdd = sc.union(rdd, sc.parallelize(seq))
+        i = 0
+        seq = Seq()
+      }
+    }
+    sc.union(rdd, sc.parallelize(seq))
+  }
+
+  /**
+    * Read tweets from provided file and store in Seq
+    * @param filepath path to file we want to read
+    * @return Seq of Tweet objects
+    */
+  def genSeqOfTweets(filepath: String): Seq[Tweet] = {
+    var seq: Seq[Tweet] = Seq()
+    for (line <- Source.fromFile(filepath).getLines()) {
+      seq = seq ++ Seq(Tweet(line))
+    }
+    seq
+  }
+
+  //TODO: write genRDDOfTweets method
 
   /**
     * Finds what hashtags cooccured often with provided seed id

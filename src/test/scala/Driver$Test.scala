@@ -28,6 +28,19 @@ class Driver$Test extends FunSuite with BeforeAndAfterEach {
     sc.stop()
   }
 
+  test("testGenRDDOfTweets") {
+    val tweets: Seq[Tweet] = Driver.genRDDOfTweets("./data/test.json", sc).collect()
+    assert(tweets.size == 7)
+    assert(tweets.head.tweetID == 763431265177595905L)
+  }
+
+  test("testGenSeqOfTweets") {
+    val tweets: Seq[Tweet] = Driver.genSeqOfTweets("./data/test.json")
+
+    assert(tweets.size == 7)
+    assert(tweets.head.tweetID == 763431265177595905L)
+  }
+
   test("testGetImportantHashTags") {
     var testRDD = Driver.getImportantHashTags("3", 0.5, tweetRDD)
     var testSet = testRDD.collect().toSet
