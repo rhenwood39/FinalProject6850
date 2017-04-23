@@ -6,39 +6,39 @@ import org.apache.spark.graphx._
   * Driver file
   */
 object Driver {
-  // TODO: Need method for reading in json and turning it into rdd of tweets
+  // TODO: Need method for reading in json and turning it Longo rdd of tweets
 
   /**
     * Finds what hashtags cooccured often with provided seed id
-    * @param hashSeedID hashtag we want to use as seed
+    * @param hashSeed hashtag we want to use as seed
     * @param threshold jaccard sim threshold
     * @param tweetRDD set of all
     * @return rdd with id's of cooccurrent hashtags
     */
-  def getImportantHashTags(hashSeedID: Int, threshold: Double, tweetRDD: RDD[Tweet]): RDD[Int] = {
+  def getImportantHashTags(hashSeed: String, threshold: Double, tweetRDD: RDD[Tweet]): RDD[String] = {
     // get total # times each hashtag appears
-    val counts: RDD[(Int, Int)] =
-      tweetRDD.map(tweet => tweet.hashtagIDS)
+    val counts: RDD[(String, Long)] =
+      tweetRDD.map(tweet => tweet.hashtags)
         .flatMap(hashes => hashes.toSeq)
-        .map(hash => (hash, 1))
+        .map(hash => (hash, 1L))
         .reduceByKey((c1, c2) => c1 + c2)
 
     // filter out tweet's that don't contain seed
-    val containingSeed: RDD[Set[Int]] =
-      tweetRDD.map(tweet => tweet.hashtagIDS)
-        .filter(hashes => hashes.contains(hashSeedID))
+    val containingSeed: RDD[Set[String]] =
+      tweetRDD.map(tweet => tweet.hashtags)
+        .filter(hashes => hashes.contains(hashSeed))
 
     // get # times seed appears
     val seedCount = containingSeed.count()
 
     // get # times each hashtag cooccurs with seed (ignore hashtags that never cooccurred)
-    val cooccurCounts: RDD[(Int, Int)] =
+    val cooccurCounts: RDD[(String, Long)] =
       containingSeed.flatMap(hashes => hashes.toSeq)
-        .map(hash => (hash, 1))
+        .map(hash => (hash, 1L))
         .reduceByKey((c1, c2) => c1 + c2)
 
     // filter by by Jaccard Sim
-    // Need |A intrsct B| / |A union B| = |A intrsct B| / (|A| + |B| - |A intrsct B|) >= threshold
+    // Need |A Longrsct B| / |A union B| = |A Longrsct B| / (|A| + |B| - |A Longrsct B|) >= threshold
     cooccurCounts.join(counts)
       .filter(t => t._2._1.toDouble / (t._2._2 + seedCount - t._2._1) >= threshold)
       .map(t => t._1)
@@ -46,13 +46,13 @@ object Driver {
 
   /**
     * Get set of all users who have used one of the important hashtags
-    * @param importantHashes id's of important hashtags
+    * @param importantHashes set of important hashtags
     * @param tweetRDD set of all tweets
     * @return rdd containing id's of users who have used these tweets
     */
-  def getImportantUsers(importantHashes: RDD[Int], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[Int] = {
+  def getImportantUsers(importantHashes: RDD[String], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[Long] = {
     val importantHashesBC = sc.broadcast(importantHashes.collect().toSet)
-    tweetRDD.map(tweet => (tweet.authorID, tweet.hashtagIDS))
+    tweetRDD.map(tweet => (tweet.authorID, tweet.hashtags))
       .filter(t => t._2.exists(importantHashesBC.value.contains))
       .map(t => t._1)
   }
@@ -64,7 +64,7 @@ object Driver {
     * @param sc
     * @return original author id -> retweet author id
     */
-  def filterByUsersRT(importantUsers: RDD[Int], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Int, Int)] = {
+  def filterByUsersRT(importantUsers: RDD[Long], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Long, Long)] = {
     val importantUsersBC = sc.broadcast(importantUsers.collect().toSet)
 
     // only keep tweets that were
@@ -82,7 +82,7 @@ object Driver {
     * @param sc
     * @return author id -> mentioned user id
     */
-  def filterByUsersMention(importantUsers: RDD[Int], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Int, Int)] = {
+  def filterByUsersMention(importantUsers: RDD[Long], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Long, Long)] = {
     val importantUsersBC = sc.broadcast(importantUsers.collect().toSet)
 
     // only keep tweets that we
@@ -99,11 +99,11 @@ object Driver {
     * @param connections edges we want to draw (should consist of users in important users)
     * @return graph of network
     */
-  def buildNetwork(importantUsers: RDD[Int], connections: RDD[(Int, Int)]): Graph[String, String] = {
+  def buildNetwork(importantUsers: RDD[Long], connections: RDD[(Long, Long)]): Graph[String, String] = {
 
     val nodes: RDD[(VertexId, String)] =
       importantUsers.map(id => (id.toLong, null.asInstanceOf[String])).distinct()
-    val edges: RDD[Edge[String]] = connections.map(t => Edge(t._1.toLong, t._2.toLong))
+    val edges: RDD[Edge[String]] = connections.map(t => Edge(t._1, t._2))
 
     Graph(nodes, edges).groupEdges((_,_) => null.asInstanceOf[String])
   }
@@ -116,11 +116,11 @@ object Driver {
   def largestConnectedComp(graph: Graph[_,_]) : Graph[_, _] = {
     val connComp = graph.connectedComponents()
     val seedID: VertexId = connComp.vertices
-      .map(v => (v._2, 1))
+      .map(v => (v._2, 1L))
       .reduceByKey((c1, c2) => c1 + c2)
-      .max()(new Ordering[Tuple2[VertexId, Int]]() {
-        override def compare(x: (VertexId, Int), y: (VertexId, Int)): Int =
-        Ordering[Int].compare(x._2, y._2)
+      .max()(new Ordering[Tuple2[VertexId, Long]]() {
+        override def compare(x: (VertexId, Long), y: (VertexId, Long)): Int =
+        Ordering[Long].compare(x._2, y._2)
       })._1
 
     connComp.subgraph(e => true, (v,d) => d == seedID)
