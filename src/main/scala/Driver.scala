@@ -16,19 +16,27 @@ object Driver {
     * @return rdd of tweets
     */
   def genRDDOfTweets(filepath: String, sc: SparkContext): RDD[Tweet] = {
+    println("**********************************************")
+    println("in gen rdd of tweets")
     var seq: Seq[Tweet] = Seq()
     var rdd: RDD[Tweet] = sc.parallelize(Seq())
+    var seqRDD: Seq[RDD[Tweet]] = Seq()
     var i = 0
 
     for (line <- Source.fromFile(filepath).getLines()) {
       seq = seq ++ Seq(Tweet(line))
-      if (i == 1000) {
-        rdd = sc.union(rdd, sc.parallelize(seq))
+      if (i == 10000) {
+        println("****************************************")
+        println("union")
+        // rdd = sc.union(rdd, sc.parallelize(seq))
+        seqRDD = seqRDD ++ Seq(sc.parallelize(seq))
         i = 0
         seq = Seq()
       }
+      i = i + 1
     }
-    sc.union(rdd, sc.parallelize(seq))
+    seqRDD = seqRDD ++ Seq(sc.parallelize(seq))
+    sc.union(seqRDD)
   }
 
   /**
@@ -37,6 +45,8 @@ object Driver {
     * @return Seq of Tweet objects
     */
   def genSeqOfTweets(filepath: String): Seq[Tweet] = {
+    println("**********************************************")
+    println("in gen seq of tweets")
     var seq: Seq[Tweet] = Seq()
     for (line <- Source.fromFile(filepath).getLines()) {
       seq = seq ++ Seq(Tweet(line))
@@ -55,6 +65,8 @@ object Driver {
     */
   def getImportantHashTags(hashSeed: String, threshold: Double, tweetRDD: RDD[Tweet]): RDD[String] = {
     // get total # times each hashtag appears
+    println("**********************************************")
+    println("get important hashtags")
     val counts: RDD[(String, Long)] =
       tweetRDD.map(tweet => tweet.hashtags)
         .flatMap(hashes => hashes.toSeq)
@@ -89,6 +101,8 @@ object Driver {
     * @return rdd containing id's of users who have used these tweets
     */
   def getImportantUsers(importantHashes: RDD[String], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[Long] = {
+    println("**********************************************")
+    println("get important users")
     val importantHashesBC = sc.broadcast(importantHashes.collect().toSet)
     tweetRDD.map(tweet => (tweet.authorID, tweet.hashtags))
       .filter(t => t._2.exists(importantHashesBC.value.contains))
@@ -103,6 +117,8 @@ object Driver {
     * @return original author id -> retweet author id
     */
   def filterByUsersRT(importantUsers: RDD[Long], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Long, Long)] = {
+    println("**********************************************")
+    println("filter by user rt")
     val importantUsersBC = sc.broadcast(importantUsers.collect().toSet)
 
     // only keep tweets that were
@@ -121,6 +137,8 @@ object Driver {
     * @return author id -> mentioned user id
     */
   def filterByUsersMention(importantUsers: RDD[Long], tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Long, Long)] = {
+    println("**********************************************")
+    println("filter by user mention")
     val importantUsersBC = sc.broadcast(importantUsers.collect().toSet)
 
     // only keep tweets that we
@@ -138,7 +156,8 @@ object Driver {
     * @return graph of network
     */
   def buildNetwork(importantUsers: RDD[Long], connections: RDD[(Long, Long)]): Graph[String, String] = {
-
+    println("**********************************************")
+    println("build network")
     val nodes: RDD[(VertexId, String)] =
       importantUsers.map(id => (id.toLong, null.asInstanceOf[String])).distinct()
     val edges: RDD[Edge[String]] = connections.map(t => Edge(t._1, t._2))
@@ -152,6 +171,8 @@ object Driver {
     * @return largest connected component (note meta-data associated with verices is erosed)
     */
   def largestConnectedComp(graph: Graph[_,_]) : Graph[_, _] = {
+    println("**********************************************")
+    println("largest conn comp")
     val connComp = graph.connectedComponents()
     val seedID: VertexId = connComp.vertices
       .map(v => (v._2, 1L))
@@ -254,7 +275,9 @@ object Driver {
     * @param filepath
     */
   def writeVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
-    graph.vertices.map(v => v._1).saveAsTextFile(filepath)
+    println("**********************************************")
+    println("in write vertices to file")
+    graph.vertices.map(v => v._1).coalesce(1).saveAsTextFile(filepath)
   }
 
   /**
@@ -263,7 +286,9 @@ object Driver {
     * @param filepath
     */
   def writeLabeledVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
-    graph.vertices.map(v => v._1 + ", " + v._2).saveAsTextFile(filepath)
+    println("**********************************************")
+    println("write labels to file")
+    graph.vertices.map(v => v._1 + ", " + v._2).coalesce(1).saveAsTextFile(filepath)
   }
 
   /**
@@ -272,10 +297,12 @@ object Driver {
     * @param filepath
     */
   def writeEdgesToFile(graph: Graph[_,_], filepath: String): Unit = {
+    println("**********************************************")
+    println("write edges to file")
     class customTuple[K, V](k: K, v: V) {
-      override def toString: String = k.toString + ", " + v.toString
+      override def toString: String = k.toString + "," + v.toString
     }
-    graph.edges.map(e => new customTuple(e.srcId, e.dstId)).saveAsTextFile(filepath)
+    graph.edges.map(e => new customTuple(e.srcId, e.dstId)).coalesce(1).saveAsTextFile(filepath)
   }
 }
 
