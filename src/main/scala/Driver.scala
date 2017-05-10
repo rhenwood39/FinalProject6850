@@ -2,7 +2,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.graphx._
 
-import scala.io.Source
 import scala.util.Random
 
 /**
@@ -94,6 +93,17 @@ object Driver {
       .map(t => t._1)
   }
 
+/**
+  * Get id's of all users in dataset
+  * @param tweetRDD set of all tweets
+  * @param sc
+  * @return rdd containing all user ids
+import scala.io.Source
+    */
+  def getAllUsers(tweetRDD: RDD[Tweet], sc: SparkContext): RDD[Long] = {
+    tweetRDD.map(tweet => tweet.authorID).distinct
+  }
+
   /**
     * Get set of all users who have used one of the important hashtags
     * @param importantHashes set of important hashtags
@@ -130,6 +140,16 @@ object Driver {
   }
 
   /**
+    * Build connections based on retweets (no filtering)
+    * @param tweetRDD
+    * @param sc
+    * @return
+    */
+  def allConnectionsRetweet(tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Long, Long)] = {
+    tweetRDD.map(tweet => (tweet.retweetOf.get.authorID, tweet.authorID))
+  }
+
+  /**
     * Filter out tweets that won't help detwemine edges (according to mentions)
     * @param importantUsers users we want in network
     * @param tweetRDD set of tweets
@@ -147,6 +167,17 @@ object Driver {
     tweetRDD.map(tweet => tweet.mentionIDS.map(mentionID => (tweet.authorID, mentionID)))
       .flatMap(t => t.toSeq)
       .filter(t => importantUsersBC.value.contains(t._1) && importantUsersBC.value.contains(t._2))
+  }
+
+  /**
+    * Connections based on mentions (no filter)
+    * @param tweetRDD
+    * @param sc
+    * @return
+    */
+  def allConnectionsMention(tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Long, Long)] = {
+    tweetRDD.map(tweet => tweet.mentionIDS.map(mentionID => (tweet.authorID, mentionID)))
+      .flatMap(t => t.toSeq)
   }
 
   /**
