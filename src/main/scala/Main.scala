@@ -4,11 +4,12 @@ import org.apache.spark.rdd.RDD
 
 object Main {
   def main(args: Array[String] = Array()): Unit = {
-    val filepath = "data/test.json"
+    val dataFilePath = readLine("Specify filepath for tweet data: ")
+    val outputFilePath = readLine("Specify DIRECTORY path for output :")
     val conf = new SparkConf().setAppName("test").setMaster("local")
     val sc = SparkContext.getOrCreate(conf)
 
-    val tweets: RDD[Tweet] = Driver.genRDDOfTweets(filepath, sc)
+    val tweets: RDD[Tweet] = Driver.genRDDOfTweets(dataFilePath, sc)
     println("Count " + tweets.count())
 
     val users : RDD[Long] = Driver.getAllUsers(tweets, sc)
@@ -18,8 +19,8 @@ object Main {
     val retweetGraph: Graph[String, String] = Driver.buildNetwork(users, retweetEdges)
     val mentionGraph: Graph[String, String] = Driver.buildNetwork(users, mentionEdges)
 
-    Driver.writeGraphToFile(retweetGraph, "/media/rhenwood39/OS/6850_proj/efilter/retweet")
-    Driver.writeGraphToFile(mentionGraph, "/media/rhenwood39/OS/6850_proj/efilter/mention")
+    Driver.writeGraphToFile(retweetGraph, outputFilePath + "/retweet")
+    Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention")
 
     // val graph = Driver.largestConnectedComp(_graph)
     // println("conn comp: Vertices=" + graph.vertices.count() + ", Edges=" + graph.edges.count())
