@@ -22,18 +22,25 @@ object Driver {
     var rdd: RDD[Tweet] = sc.parallelize(Seq())
     var seqRDD: Seq[RDD[Tweet]] = Seq()
     var i = 0
-
+    var nUnions = 0
     for (line <- Source.fromFile(filepath).getLines()) {
-      seq = seq ++ Seq(Tweet(line))
-      if (i == 10000) {
-        println("****************************************")
-        println("union")
-        // rdd = sc.union(rdd, sc.parallelize(seq))
-        seqRDD = seqRDD ++ Seq(sc.parallelize(seq))
-        i = 0
-        seq = Seq()
+      try {
+        seq = seq ++ Seq(Tweet(line))
+        if (i == 10000) {
+          // print progress
+          println("****************************************")
+          println("union " + nUnions)
+          nUnions += 1
+
+          // update
+          seqRDD = seqRDD ++ Seq(sc.parallelize(seq))
+          i = 0
+          seq = Seq()
+        }
+        i = i + 1
+      } catch {
+        case e => println("ERROR: " + line + "\n" + e.printStackTrace())
       }
-      i = i + 1
     }
     seqRDD = seqRDD ++ Seq(sc.parallelize(seq))
     sc.union(seqRDD)
