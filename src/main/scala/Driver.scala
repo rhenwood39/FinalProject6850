@@ -332,7 +332,7 @@ import scala.io.Source
     println("**********************************************")
     println("write edges to file")
     class customTuple[K, V](k: K, v: V) {
-      override def toString: String = k.toString + "," + v.toString
+      override def toString: String = k.toString + " " + v.toString
     }
     graph.edges.map(e => new customTuple(e.srcId, e.dstId)).coalesce(1).saveAsTextFile(filepath)
   }
