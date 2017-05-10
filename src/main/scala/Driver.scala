@@ -147,7 +147,7 @@ import scala.io.Source
     * @return
     */
   def allConnectionsRetweet(tweetRDD: RDD[Tweet], sc: SparkContext): RDD[(Long, Long)] = {
-    tweetRDD.map(tweet => (tweet.retweetOf.get.authorID, tweet.authorID))
+    tweetRDD.filter(tweet => tweet.retweetOf.nonEmpty).map(tweet => (tweet.retweetOf.get.authorID, tweet.authorID))
   }
 
   /**
