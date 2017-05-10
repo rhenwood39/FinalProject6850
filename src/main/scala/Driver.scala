@@ -106,6 +106,18 @@ import scala.io.Source
   }
 
   /**
+    * Gets users and their hash tag counts
+    * @param tweetRDD set of all tweets
+    * @param sc
+    * @return rdd containing a users to their hashtag counts
+    */
+  def getUsersToHashtagCounts(tweetRDD: RDD[Tweet], sc: SparkContext) : RDD[(Long, Map[Long, Integer)]] = {
+    val usersToHashtagCounts = tweetRDD.map(tweet => (tweet.authorID, tweet.hashtags.toList()))
+                               .reduceByKey(_ ++ _)
+                               .map((userId, hashtags) => (userId, hashtags.groupBy(identity).mapValues(_.size))
+  }
+
+  /**
     * Get set of all users who have used one of the important hashtags
     * @param importantHashes set of important hashtags
     * @param tweetRDD set of all tweets
