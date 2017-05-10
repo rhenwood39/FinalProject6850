@@ -123,6 +123,10 @@ import scala.io.Source
       .flatMapValues(hashtags => hashtags.toSeq)
   }
 
+  def printUsersToHashtags(data: RDD[(Long, String)], filePath: String) : Unit = {
+   data.map((userId, hashtag) => userId + "," + hashtag).saveAsTextFile(filepath)
+  }
+
   /**
     * Get set of all users who have used one of the important hashtags
     * @param importantHashes set of important hashtags

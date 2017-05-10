@@ -24,6 +24,7 @@ object Main {
     Driver.writeGraphToFile(retweetGraph, outputFilePath + "/retweet")
     Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention")
 
+    // Driver.printUsersToHashtags(getUsersToHashtags(tweets, sc), "/data/userToHashtags.txt)
     // val graph = Driver.largestConnectedComp(_graph)
     // println("conn comp: Vertices=" + graph.vertices.count() + ", Edges=" + graph.edges.count())
 
