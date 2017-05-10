@@ -23,7 +23,7 @@ object Main {
 
     // Driver.writeGraphToFile(retweetGraph, outputFilePath + "/retweet")
     // Driver.writeVerticesToFile(graph, filepath + "/retweet_vertices")
-    Driver.writeEdgesToFile(retweetGraph,  "/retweet_edges")
+    Driver.writeEdgesToFile(retweetGraph, outputFilePath + "/retweet_edges")
 
     // Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention")
     // Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention_vertices")
