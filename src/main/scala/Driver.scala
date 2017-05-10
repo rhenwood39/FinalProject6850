@@ -113,6 +113,21 @@ import scala.io.Source
   }
 
   /**
+    * Gets users and the hashtags they've used
+    * @param tweetRDD set of all tweets
+    * @param sc
+    * @return rdd containing a users to their hashtags
+    */
+  def getUsersToHashtags(tweetRDD: RDD[Tweet], sc: SparkContext) : RDD[(Long, String)] = {
+    tweetRDD.map(tweet => (tweet.authorID, tweet.hashtags))
+      .flatMapValues(hashtags => hashtags.toSeq)
+  }
+
+  def printUsersToHashtags(data: RDD[(Long, String)], filePath: String) : Unit = {
+   data.map((userId, hashtag) => userId + "," + hashtag).saveAsTextFile(filepath)
+  }
+
+  /**
     * Get set of all users who have used one of the important hashtags
     * @param importantHashes set of important hashtags
     * @param tweetRDD set of all tweets

@@ -29,6 +29,7 @@ object Main {
     // Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention_vertices")
     // Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention_edges")
 
+    // Driver.printUsersToHashtags(getUsersToHashtags(tweets, sc), "/data/userToHashtags.txt)
     // val graph = Driver.largestConnectedComp(_graph)
     // println("conn comp: Vertices=" + graph.vertices.count() + ", Edges=" + graph.edges.count())
 
