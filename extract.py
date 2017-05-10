@@ -1,7 +1,7 @@
 import json
 import cPickle as pickle
 
-def loadTweets(filepath='results.First100K.json'):
+def loadTweets(filepath='resultsFirst100K.json'):
     tweets = []
     with open(filepath, 'rb') as f:
         for line in f:
@@ -17,8 +17,7 @@ def addToDictionary(d, key, item):
 def extendToDictionary(d, key, items):
     if key not in d:
         d[key] = []
-    d[key].extend(items)generateGraphData(tweets):
-
+    d[key].extend(items)
 
 def extractDataFromTweets(tweets):
     user_id_to_hashtags = {}
