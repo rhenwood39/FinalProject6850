@@ -19,10 +19,15 @@ object Main {
     val mentionEdges: RDD[(Long, Long)] = Driver.filterByUsersMention(users, tweets, sc)
 
     val retweetGraph: Graph[String, String] = Driver.buildNetwork(users, retweetEdges)
-    val mentionGraph: Graph[String, String] = Driver.buildNetwork(users, mentionEdges)
+    //val mentionGraph: Graph[String, String] = Driver.buildNetwork(users, mentionEdges)
 
-    Driver.writeGraphToFile(retweetGraph, outputFilePath + "/retweet")
-    Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention")
+    // Driver.writeGraphToFile(retweetGraph, outputFilePath + "/retweet")
+    // Driver.writeVerticesToFile(graph, filepath + "/retweet_vertices")
+    Driver.writeEdgesToFile(retweetGraph, outputFilePath + "/retweet_edges")
+
+    // Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention")
+    // Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention_vertices")
+    // Driver.writeGraphToFile(mentionGraph, outputFilePath + "/mention_edges")
 
     // Driver.printUsersToHashtags(getUsersToHashtags(tweets, sc), "/data/userToHashtags.txt)
     // val graph = Driver.largestConnectedComp(_graph)
