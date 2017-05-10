@@ -313,7 +313,7 @@ import scala.io.Source
     println("*********************")
     println("writing graph to file...")
     writeVerticesToFile(graph, filepath + "_vertices")
-    writeEdgesToFile(graph, file-atph + "_edges")
+    writeEdgesToFile(graph, filepath + "_edges")
   }
 
   /**
