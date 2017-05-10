@@ -331,7 +331,7 @@ import scala.io.Source
   def writeVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
     println("**********************************************")
     println("in write vertices to file")
-    graph.vertices.map(v => v._1).coalesce(1).saveAsTextFile(filepath)
+    graph.vertices.map(v => v._1).saveAsTextFile(filepath)
   }
 
   /**
@@ -342,7 +342,7 @@ import scala.io.Source
   def writeLabeledVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
     println("**********************************************")
     println("write labels to file")
-    graph.vertices.map(v => v._1 + ", " + v._2).coalesce(1).saveAsTextFile(filepath)
+    graph.vertices.map(v => v._1 + ", " + v._2).saveAsTextFile(filepath)
   }
 
   /**
@@ -356,7 +356,7 @@ import scala.io.Source
     class customTuple[K, V](k: K, v: V) {
       override def toString: String = k.toString + " " + v.toString
     }
-    graph.edges.map(e => new customTuple(e.srcId, e.dstId)).coalesce(1).saveAsTextFile(filepath)
+    graph.edges.map(e => new customTuple(e.srcId, e.dstId)).saveAsTextFile(filepath)
   }
 }
 
