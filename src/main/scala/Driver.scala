@@ -22,18 +22,25 @@ object Driver {
     var rdd: RDD[Tweet] = sc.parallelize(Seq())
     var seqRDD: Seq[RDD[Tweet]] = Seq()
     var i = 0
-
+    var nUnions = 0
     for (line <- Source.fromFile(filepath).getLines()) {
-      seq = seq ++ Seq(Tweet(line))
-      if (i == 10000) {
-        println("****************************************")
-        println("union")
-        // rdd = sc.union(rdd, sc.parallelize(seq))
-        seqRDD = seqRDD ++ Seq(sc.parallelize(seq))
-        i = 0
-        seq = Seq()
+      try {
+        seq = seq ++ Seq(Tweet(line))
+        if (i == 10000) {
+          // print progress
+          println("****************************************")
+          println("union " + nUnions)
+          nUnions += 1
+
+          // update
+          seqRDD = seqRDD ++ Seq(sc.parallelize(seq))
+          i = 0
+          seq = Seq()
+        }
+        i = i + 1
+      } catch {
+        case e => println("ERROR: " + line + "\n" + e.printStackTrace())
       }
-      i = i + 1
     }
     seqRDD = seqRDD ++ Seq(sc.parallelize(seq))
     sc.union(seqRDD)
@@ -336,7 +343,7 @@ import scala.io.Source
   def writeVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
     println("**********************************************")
     println("in write vertices to file")
-    graph.vertices.map(v => v._1).coalesce(1).saveAsTextFile(filepath)
+    graph.vertices.map(v => v._1).saveAsTextFile(filepath)
   }
 
   /**
@@ -347,7 +354,7 @@ import scala.io.Source
   def writeLabeledVerticesToFile(graph: Graph[_,_], filepath: String): Unit = {
     println("**********************************************")
     println("write labels to file")
-    graph.vertices.map(v => v._1 + ", " + v._2).coalesce(1).saveAsTextFile(filepath)
+    graph.vertices.map(v => v._1 + ", " + v._2).saveAsTextFile(filepath)
   }
 
   /**
@@ -361,7 +368,7 @@ import scala.io.Source
     class customTuple[K, V](k: K, v: V) {
       override def toString: String = k.toString + " " + v.toString
     }
-    graph.edges.map(e => new customTuple(e.srcId, e.dstId)).coalesce(1).saveAsTextFile(filepath)
+    graph.edges.map(e => new customTuple(e.srcId, e.dstId)).saveAsTextFile(filepath)
   }
 }
 

@@ -13,8 +13,10 @@ object Main {
     println("Count " + tweets.count())
 
     val users : RDD[Long] = Driver.getAllUsers(tweets, sc)
-    val retweetEdges : RDD[(Long, Long)] = Driver.allConnectionsRetweet(tweets, sc)
-    val mentionEdges : RDD[(Long ,Long)] = Driver.allConnectionsMention(tweets, sc)
+    //val retweetEdges : RDD[(Long, Long)] = Driver.allConnectionsRetweet(tweets, sc)
+    //val mentionEdges : RDD[(Long ,Long)] = Driver.allConnectionsMention(tweets, sc)
+    val retweetEdges: RDD[(Long, Long)] = Driver.filterByUsersRT(users, tweets, sc)
+    val mentionEdges: RDD[(Long, Long)] = Driver.filterByUsersMention(users, tweets, sc)
 
     val retweetGraph: Graph[String, String] = Driver.buildNetwork(users, retweetEdges)
     val mentionGraph: Graph[String, String] = Driver.buildNetwork(users, mentionEdges)
