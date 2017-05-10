@@ -301,6 +301,14 @@ import scala.io.Source
     Graph(newVertices, graph.edges)
   }
 
+  /**
+    * write the vertices and edges of graph to file
+    * Specifically, vertices are written to filepath + "_vertices"
+    * and edges to filepath + "_edges"
+    * @param graph
+    * @param filepath
+    * @return
+    */
   def writeGraphToFile(graph: Graph[_,_], filepath: String) : Unit = {
     println("*********************")
     println("writing graph to file...")
