@@ -67,6 +67,15 @@ class Driver$Test extends FunSuite with BeforeAndAfterEach {
     assert(testSet.equals(Set(1,2,4,5)))
   }
 
+  test("testGetAllUsers") {
+    var testRDD = Driver.getAllUsers(tweetRDD, sc)
+    var testSet = testRDD.collect().toSet
+
+    val users = Set(1L,2L,3L,4L,5L)
+
+    assert(testSet.equals(users))
+  }
+
   test("testFilterByUsersRT") {
     var tweets: RDD[Long] = sc.parallelize(Seq(1))
     var testRDD = Driver.filterByUsersRT(tweets, tweetRDD, sc)
@@ -81,6 +90,15 @@ class Driver$Test extends FunSuite with BeforeAndAfterEach {
     assert(testSet.equals(Set((1, 5))))
   }
 
+  test("testAllConnectionsRetweet") {
+    var testRDD = Driver.allConnectionsRetweet(tweetRDD, sc)
+    var testSet = testRDD.collect().toSet
+
+    val connections = Set((1,5), (4,5), (1,3), (1,2))
+
+    assert(testSet.equals(connections))
+  }
+
   test("testFilterByUsersMention") {
     var tweets: RDD[Long] = sc.parallelize(Seq(1))
     var testRDD = Driver.filterByUsersMention(tweets, tweetRDD, sc)
@@ -93,6 +111,15 @@ class Driver$Test extends FunSuite with BeforeAndAfterEach {
     testSet = testRDD.collect().toSet
 
     assert(testSet.equals(Set((1, 2), (1, 5), (5, 1), (5, 2))))
+  }
+
+  test("testAllConnectionsUserMentions") {
+    var testRDD = Driver.allConnectionsMention(tweetRDD, sc)
+    var testSet = testRDD.collect().toSet
+
+    val connections = Set((1,2),(1,3),(1,5),(3,1),(3,2),(5,1),(5,2))
+
+    assert(testSet.equals(connections))
   }
 
   test("testBuildNetwork") {
