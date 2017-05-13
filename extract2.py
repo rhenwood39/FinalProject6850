@@ -1,3 +1,4 @@
+import json
 with open('richie.json', 'rb') as f: 
     for line in f:
         tweet = json.loads(line)
@@ -24,5 +25,5 @@ with open('richie.json', 'rb') as f:
         if len(entities['hashtags']) > 0: 
             with open("hashtags.txt", 'a') as w:
                 for hashtag in entities['hashtags']:
-                    w.write("%s %s" % (user_id, hashtag['text']))
+                    w.write("%s %s" % (user_id, hashtag['text'].encode('ascii', 'ignore')))
                     w.write('\n')
