@@ -1,0 +1,89 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{\textbf{CS 6850 Final Project:}\\ Political Polarization on Twitter in the 2016 Election}
+\author{George Ding (gd264), Richie Henwood (rbh228), \\Andrew Jiang (ahj34), Ji Hun Kim (jk2227)}
+\date{\textbf{May 17th 2017}}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+For our project, we plan to extend the work of Conover et al. \cite{conover} by focusing on a dataset consisting of tweets from the 2016 presidental campaign rather than the 2010 U.S. congressional election. Conover et al.'s work analyzed how ideas spread in networks constructed from different aspects of tweets: retweets and mentions. They found that retweet networks exhibit polarized communities whereas mention networks allow for more political dialogues between members of different political
+ideologies. 
+\\\\
+We plan to start by replicating some of Conover’s experiments with the different type of networks. Our expectation is that even when using similar methods for analysis as Conover, we will be able to obtain differences and more interesting results due to the nature of our dataset. For example, the change in political landscape from 2010 to 2016 and the increased prevalence of social media from 2010 to 2016 could lead to changes in the polarities observed in the retweets and mentions networks. In addition, the size of the dataset that we would be working with (up to 280 million tweets are available) would be on a much larger scale than the one that Conover et al. worked with (250,000 tweets) which should yield more consistent and interesting results.
+\\\\
+As part of the extension, we also took a look at reply networks in addition to mentions and retweets. We also propose a model that captures how ideas may spread in a polarizing manner in a setting where people with pre-existing biases are constantly exposed to new ideas in their network. 
+
+\section{Related Work} 
+
+As stated earlier, our work directly extends from Conover et al.'s work\cite{conover}. In \textit{Political Polarization on Twitter}, Conover et al. analyzed more than 250,000 tweets from the six weeks leading up to the 2010 U.S. congressional midterm elections in order to observe how information flowed between communities with differing political opinions. They looked at the Twitter dataset from two perspectives: retweets and user mentions. They found that retweet networks exhibit polarized communities whereas
+mention networks allow for more political dialogues between members of different political ideologies.
+\\\\
+Conover et al. argue that the the higher rate of information flow in mention networks may occur due to politically motivated individuals trying to inject information into opposing communities or trigger other Twitter users who may disagree. They hypothesize that users who are triggered to respond are more likely to respond directly via a mention rather than by broadcasting the idea further via a retweet. To set up their experiment, they first identified one popular hashtag for both ends of the political spectrum: “#p2” for the left and “#tcot” for the right. By analyzing the sets of hashtags these co-occurred with and by using the Jaccard index, they were able to identify 55 additional hashtags that were deemed highly associated with one or both of the aforementioned seeds.
+\\\\
+Posts that contained these hashtags composed the dataset that they worked with. They next constructed two directed graphs: one for retweets and one for mentions. Edges in the retweet network were drawn when user A retweeted something from user B, and edges in the mention network were drawn when user A mentioned user B. From these networks, Conover et al. used label propagation, a technique similar to one we looked at during class, to identify two distinct, consistent clusters. To compare the modularity (a measure derived
+from cluster assignments to measure segregation) of the clusters formed by retweets and mentions, the clusters were compared against a randomly shuffled version of the graphs as a baseline, and the respective z-scores confirmed that retweet networks are significantly more segregated than the mention network.
+\\\\
+After performing clustering on just the occurrences of retweets and mentions, they also composed vectors for every user weighed by frequencies of hashtags and then compared how similar users were to each other using cosine similarity. Doing so revealed that users in the same mention cluster were not much more similar than users in different clusters. On the other hand, users in the same retweet network were relatively very similar.
+\\\\
+Using qualitative content analysis, Conover et al. were able to confirm that clusters in the
+retweet network corresponded to users with same political ideologies. The paper also briefly discusses comparing the ratios between observed and expected numbers of links between
+users of each political alignment and the phenomena they describe as “content injection” to help explain why retweet networks and mention networks displayed different characteristics. They did not attempt to provide a mathematical model to explain the segregation in the retweet network; however, they hypothesized that people may be more likely to spread extreme ideas via social media than in person. This in turn may reinforce preexisting biases and exacerbate polarization.
+\\\\
+Conover et al. also proposed the idea that there was a greater intrinsic willingness online, on internet-based social media platforms, to share controversial ideas which they site to be the source of polarization online. 
+\\\\
+Although they provide interesting findings, Conover et al. do not provide a quantitative or theoretical mathematical model to support it. To remedy this we found a paper proposing such a mathematical model that we looked to as a preliminary answer to Conover et al.'s proposal and as inspiration for us to develop our own mathematical model to analyze our Tweet network. The paper was the work of Dandekar et al.\cite{goel}, \textit{Biased Assimilation, Homophily and the Dynamics of Polarization}.
+\\\\
+Dandekar et al. proposes a model for gauging the polarization in a social network as a weighted graph where each node represents a person and each edge represents the relationship between two persons such that these two people have some connection and degree of influence over one another. In addition to the vertices and edges the graph holds a weight for each edge and weight for each individual. The edge weight determines the degree of influence that the two corresponding individuals have over one another and the individual weight determines the weight the corresponding individual has for their own opinion. These weights along with the vertices and edges determine different states of the graphs given different time steps.
+\\\\
+This formation of varying states of the graph given time steps means that Dandekar et al.'s model is a dynamic graph model. The way Dandekar et al. has the graph change is as follows. Primarily at each time step each individual has an opinion which is a varying value between 0 and 1 where 0 and 1 denote the extremes of some spectrum of opinion. Dandekar et al. then describes the opinion formation process as how individuals in the graph update their opinions in the next iterative time step $t+1$ given a starting time step, $t$ as a function of their current opinion and the different weights associated with the individual in the graph. Ultimately it is this opinion formation process that allows us to understand a possible model for polarization and a process for polarizing.
+\\\\
+Dandekar et al. describes an opinion formation process as being polarizing if the continued iteration of the process results in further divergent opinions. This possibly means two things. This could mean either that the opinions converge towards the values of 0 or 1 which were formally expressed as the extremes of the opinions or that the collective vector of all opinions at each given time step becomes more varying in its entries/dimensions as the time step iterates. The latter is measured by a heuristic that Dandekar et al. calls the Network Disagreement Index\cite{goel}. Dandekar proposes many different algorithms and heuristics thereafter for this opinion formation process, all of which are functions of the weights, current opinions, and time. This allowed us to use Dandekar et al.'s graph setup as a mathematical model to explain polarization.
+\\\\
+The main distinction between Dandekar et al.'s proposed model for polarization and the one we eventually formulate is the change in structure of the graph. Dandekar et al. look at polarization as a function of the opinion formation process as a function of the time step but we primarily look at polarization as a change in the graph's structure and state as a function of the time step. 
+\section{Approach} 
+\subsection{Dataset}
+We sourced our data from a public aggregation of Tweet IDs from the Harvard Dataverse\cite{dataverse}. The IDs identify a collection of Tweets from the 2016 Presidential Election that were found using candidate and key election hashtags. We parsed and built our networks on 4 million of these Tweets.
+\subsubsection{Scraping}
+Using the publicly sourced Tweet IDs and the Twitter API we obtained our data using both preexisting libraries and self-built methods. We used twarc\cite{twarc} to hydrate the majority of the Tweet IDs into Tweet objects. Where twarc was inadequate we ran our own programs to obtain Tweets from the Twitter API.
+\subsubsection{Parsing}
+After retrieving all of the Tweet objects associated with our 4 million Tweet IDs, we parsed the data and built two graphs: a retweet network and a mention network. In the retweet network, the nodes are users and a directed edge is drawn from user A to user B if B retweets something posted by A. In the mention network, a directed edge is drawn from user A to user B if A mentions B in a tweet.
+\\\\
+We also constructed a reply network, which was not present in the study by Conover et al. In the reply network, a directed edge is drawn from user A to user B if A replies to B, which means that A mentions B in a tweet after being mentioned by B. 
+\\\\
+These graphs were presented as a list of edges, for which we used Python-igraph to visualize and experiment with. 
+\\\\
+Richie can talk more about the code and the network here, getting important users, etc
+\section{Results}
+\subsection{Label Propagation}
+\subsection{Cosine Similarity}
+In order to get a sense for how similar two users from the same cluster were and how different two users from different clusters were, we used cosine similarity similar to Conover et al.\cite{conover}. The vectors associated with each user were a frequency count of the hashtags that they included in their tweets.
+
+\begin{thebibliography}{9}
+
+\bibitem{conover} 
+M. D. Conover, J. Ratkiewicz, M. Francisco, B. Gonc¸alves, A. Flammini, F. Menczer \textit{\textbf{Political Polarization on Twitter}}. \\
+Center for Complex Networks and Systems Research, School of Informatics and Computing, Indiana University, Bloomington, IN, USA
+
+\bibitem{goel}
+Pranav Dandekar, Ashish Goel, David Lee
+\textit{\textbf{Biased Assimilation, Homophily and the Dynamics of Polarization}}. \\
+September 27, 2012
+ 
+\bibitem{dataverse} 
+Littman, Justin; Wrubel, Laura; Kerchner, Daniel
+\textit{\textbf{2016 United States Presidential Election Tweet Ids}}. \\
+Harvard Dataverse, V3, 2016
+
+\bibitem{twarc}
+\textit{\textf{twarc.}}\\
+https://github.com/DocNow/twarc
+
+\end{thebibliography}
+
+
+\end{document}
