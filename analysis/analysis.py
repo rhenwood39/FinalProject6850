@@ -2,9 +2,9 @@ import igraph as ig
 import numpy as np
 import matplotlib.pyplot as plt
 
-SOURCE = "../1MRichieJson/"
-TYPE = "retweet"
-NUM = 40
+SOURCE = "./1MRichieJson/"
+TYPE = "mentions"
+NUM = 75
 
 # get largest connected comp
 graph = ig.Graph.Read_Ncol(SOURCE + TYPE + ".txt").as_undirected().simplify()
@@ -57,17 +57,23 @@ plt.title("Retweet Label Prop Adj Rand Idx")
 plt.savefig(SOURCE + TYPE + "_randhist.png")
 plt.clf()
 
-best_mod = -np.inf
-best_vc = None
+# best_mod = -np.inf
+# best_vc = None
+# for vc in vcs:
+# 	if vc.modularity > best_mod:
+# 		best_vc = vc
+# 		best_mod = vc.modularity
+mods = []
 for vc in vcs:
-	if vc.modularity > best_mod:
-		best_vc = vc
-		best_mod = vc.modularity
+	mods.append(vc.modularity)
+mods = np.array(mods)
+idx = mods.argsort()[len(mods)/2]
+vc = vcs[idx]
 
 with open(SOURCE + TYPE + "_clust.txt", "w") as f:
-	nnodes = len(best_vc.membership)
+	nnodes = len(vc.membership)
 	for i in range(nnodes):
-		f.write(lcc.vs[i]["name"] + " " + str(best_vc.membership[i]) + "\n")
+		f.write(lcc.vs[i]["name"] + " " + str(vc.membership[i]) + "\n")
 f.close()	
 
 
