@@ -1,8 +1,9 @@
 import numpy as np
+import json
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-STOP_WORDS = map(lambda w: w.encode("ascii"), stopwords.words("english"))
+STOP_WORDS = stopwords.words("english")
 
 # get map from userid -> clusterid
 def get_user2cluster(filepath):
@@ -36,6 +37,22 @@ def get_cluster2users(filepath):
 			cluster2users[clusterid] = [userid]
 	return cluster2users
 
+# get map from userid -> text of all tweets
+def get_user2tweets(filepath):
+	user2tweets = {}
+	with open(filepath, 'rb') as f: 
+	    i = 0 
+	    for line in f:
+	        tweet = json.loads(line)
+	        user_id = tweet['user']['id']
+	        text = tweet['text'].lower().replace("\n", "")
+	        
+	        if user_id not in user2tweets:
+	            user2tweets[user_id] = ""
+	        user2tweets[user_id] = user2tweets[user_id] + " " + text
+	f.close()
+	return user2tweets
+
 # get map from userid -> string of hashtags used (string separated)
 def get_user2hashtags(filepath):
 	with open(filepath, "r") as f:
@@ -61,7 +78,7 @@ def select_from_cluster(cluster2users, npeople, clusterid):
 
 # sample npeople from 2 largest clusters
 # computer similarity of their associated documents
-def get_similarity_hashtags(cluster2users, user2hashtags, npeople):
+def get_similarity(cluster2users, user2text, npeople, stop=True):
 	cluster_biggest = -1
 	cluster_2biggest = -1
 	cluster_biggest_id = None
@@ -83,17 +100,17 @@ def get_similarity_hashtags(cluster2users, user2hashtags, npeople):
 
 	docs = []
 	for user in userset1:
-		if user in user2hashtags:
-			docs.append(user2hashtags[user])
+		if user in user2text:
+			docs.append(user2text[user])
 		else:
 			docs.append("")
 	for user in userset2:
-		if user in user2hashtags:
-			docs.append(user2hashtags[user])
+		if user in user2text:
+			docs.append(user2text[user])
 		else:
 			docs.append("")
 
-	vect = TfidfVectorizer(min_df=1)
+	vect = TfidfVectorizer(min_df=1,stop_words=STOP_WORDS if stop else None)
 	tfidf = vect.fit_transform(docs)
 	sim = (tfidf * tfidf.T).A
 
