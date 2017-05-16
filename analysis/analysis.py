@@ -22,7 +22,7 @@ graph.delete_vertices(to_remove)
 
 # get largest connected component
 lcc = graph.clusters().giant()
-
+"""
 # get clusterings
 vcs = []
 for i in range(NUM):
@@ -90,7 +90,7 @@ with open(SOURCE + TYPE + "_rm_lelp_clust.txt", "w") as f:
 	for i in range(nnodes):
 		f.write(lcc.vs[i]["name"] + " " + str(vc.membership[i]) + "\n")
 f.close()	
-
+"""
 
 
 

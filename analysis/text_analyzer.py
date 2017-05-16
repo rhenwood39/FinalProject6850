@@ -124,5 +124,77 @@ def get_similarity(cluster2users, user2text, npeople, stop=True):
 
 	return sim, within1_avg, within2_avg, between_avg
 
+# perform analysis
+
+# setup
+DATA = "/media/rhenwood39/OS/6850_proj/efilter/resultsFirst1M.json"
+SOURCE = "./1MRichieJson/"
+cluster_filepaths = ["retweet_rm_clust.txt", "mentions_rm_clust.txt", "replies_rm_clust.txt", "retweet_rm_lelp_clust.txt", "mentions_rm_lelp_clust.txt", "replies_rm_lelp_clust.txt"]
+output = ["retweet_labprop", "mentions_labprop", "replies_labprop", "retweet_modlabprop", "mentions_modlabprop", "replies_modlabprop"]
+
+# get tweets
+user2tweets = get_user2tweets(DATA)
+# wi1s = []
+# wi2s = []
+# bws = []
+
+# cluster sim
+# for file in cluster_filepaths:
+# 	cluster2users = get_cluster2users(SOURCE + file)
+# 	sim,wi1,wi2,bw = get_similarity(cluster2users, user2docs, 2000)
+# 	wi1s.append(wi1)
+# 	wi2s.append(wi2)
+# 	bws.append(bw)
+
+# with open(SOURCE + "cosine_sim_analysis_hashtag.csv", "w") as f:
+# 	f.write("source, within1, within2, between\n")
+# 	for i in range(len(cluster_filepaths)):
+# 		f.write(cluster_filepaths[i] + ", " + str(wi1s[i]) + ", " + str(wi2s[i]) + ", " + str(bws[i]) + "\n")
+# f.close()
+
+# get tweets for each cluster
+for i in range(len(cluster_filepaths)):
+	file = cluster_filepaths[i]
+	out = output[i]
+	
+	# get clusters
+	cluster2users = get_cluster2users(SOURCE + file)
+
+	# get 2 biggest clusters
+	cluster_biggest = -1
+	cluster_2biggest = -1
+	cluster_biggest_id = None
+	cluster_2biggest_id = None
+
+	for clusterid in cluster2users.keys():
+		users = cluster2users[clusterid]
+		if len(users) >= cluster_biggest:
+			cluster_2biggest = cluster_biggest
+			cluster_biggest = len(users) 
+			cluster_2biggest_id = cluster_biggest_id
+			cluster_biggest_id = clusterid
+		elif len(users) > cluster_2biggest:
+			cluster_2biggest = len(users)
+			cluster_2biggest_id = clusterid
+
+	cluster1 = np.random.choice(np.array(cluster2users[cluster_biggest_id]), size=20, replace=False)
+	cluster2 = np.random.choice(np.array(cluster2users[cluster_2biggest_id]), size=20, replace=False)
+
+	with open("./ClusterTweets/" + out + "1.txt", "w") as f:
+		for i in range(len(cluster1)):
+			user = cluster1[i]
+			f.write(u"TWEET " + str(i) + u"\n")
+			f.write((user2tweets[user] + u"\n").encode("utf8"))
+			f.write(u"\n***********************************************************\n")
+	f.close()
+
+	with open("./ClusterTweets/" + out + "2.txt", "w") as f:
+		for i in range(len(cluster2)):
+			user = cluster2[i]
+			f.write(u"TWEET " + str(i) + u"\n")
+			f.write((user2tweets[user] + u"\n").encode("utf8"))
+			f.write(u"\n***********************************************************\n")
+	f.close()
+
 
 
